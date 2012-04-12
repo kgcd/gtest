@@ -33,7 +33,7 @@
 
 #include <stdlib.h>
 #include <iostream>
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 // Indicates that this translation unit is part of Google Test's
 // implementation.  It must come before gtest-internal-inl.h is
@@ -69,7 +69,7 @@ namespace {
                   << "  Actual: " << actual_val << "\n"\
                   << "Expected: " #expected "\n"\
                   << "Which is: " << expected_val << "\n";\
-      ::testing::internal::posix::Abort();\
+      abort();\
     }\
   } while(::testing::internal::AlwaysFalse())
 
@@ -113,10 +113,10 @@ TEST(BarDeathTest, ThreadSafeAndFast) {
   g_death_test_count++;
 
   GTEST_FLAG(death_test_style) = "threadsafe";
-  EXPECT_DEATH_IF_SUPPORTED(::testing::internal::posix::Abort(), "");
+  EXPECT_DEATH_IF_SUPPORTED(abort(), "");
 
   GTEST_FLAG(death_test_style) = "fast";
-  EXPECT_DEATH_IF_SUPPORTED(::testing::internal::posix::Abort(), "");
+  EXPECT_DEATH_IF_SUPPORTED(abort(), "");
 }
 
 #if GTEST_HAS_PARAM_TEST

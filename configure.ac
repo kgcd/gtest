@@ -5,14 +5,13 @@ m4_include(m4/acx_pthread.m4)
 # "[1.0.1]"). It also asumes that there won't be any closing parenthesis
 # between "AC_INIT(" and the closing ")" including comments and strings.
 AC_INIT([Google C++ Testing Framework],
-        [1.6.0],
+        [1.5.0],
         [googletestframework@googlegroups.com],
         [gtest])
 
 # Provide various options to initialize the Autoconf and configure processes.
 AC_PREREQ([2.59])
 AC_CONFIG_SRCDIR([./COPYING])
-AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([build-aux/config.h])
 AC_CONFIG_FILES([Makefile])

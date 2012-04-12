@@ -33,11 +33,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "gtest/gtest.h"
-
-#define GTEST_IMPLEMENTATION_ 1  // Required for the next #include.
-#include "src/gtest-internal-inl.h"
-#undef GTEST_IMPLEMENTATION_
+#include <gtest/gtest.h>
 
 namespace testing {
 GTEST_DECLARE_string_(filter);
@@ -115,7 +111,7 @@ TEST(FooTest, Bar) {
 void Check(bool condition, const char* msg) {
   if (!condition) {
     printf("FAILED: %s\n", msg);
-    testing::internal::posix::Abort();
+    abort();
   }
 }
 
@@ -127,7 +123,6 @@ int RunAllTests(MyEnvironment* env, FailureType failure) {
   env->Reset();
   env->set_failure_in_set_up(failure);
   test_was_run = false;
-  testing::internal::GetUnitTestImpl()->ClearAdHocTestResult();
   return RUN_ALL_TESTS();
 }
 

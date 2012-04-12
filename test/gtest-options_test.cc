@@ -38,12 +38,12 @@
 // make-files on Windows and other platforms. Do not #include this file
 // anywhere else!
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #if GTEST_OS_WINDOWS_MOBILE
-# include <windows.h>
+#include <windows.h>
 #elif GTEST_OS_WINDOWS
-# include <direct.h>
+#include <direct.h>
 #endif  // GTEST_OS_WINDOWS_MOBILE
 
 // Indicates that this translation unit is part of Google Test's

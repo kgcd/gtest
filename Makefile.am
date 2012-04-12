@@ -1,15 +1,13 @@
 # Automake file
 
-ACLOCAL_AMFLAGS = -I m4
-
 # Nonstandard package files for distribution
 EXTRA_DIST = \
   CHANGES \
   CONTRIBUTORS \
   include/gtest/gtest-param-test.h.pump \
-  include/gtest/internal/gtest-param-util-generated.h.pump \
   include/gtest/internal/gtest-tuple.h.pump \
   include/gtest/internal/gtest-type-util.h.pump \
+  include/gtest/internal/gtest-param-util-generated.h.pump \
   make/Makefile \
   scripts/fuse_gtest_files.py \
   scripts/gen_gtest_pred_impl.py \
@@ -19,14 +17,13 @@ EXTRA_DIST = \
 # gtest source files that we don't compile directly.  They are
 # #included by gtest-all.cc.
 GTEST_SRC = \
+  src/gtest.cc \
   src/gtest-death-test.cc \
   src/gtest-filepath.cc \
   src/gtest-internal-inl.h \
   src/gtest-port.cc \
-  src/gtest-printers.cc \
   src/gtest-test-part.cc \
-  src/gtest-typed-test.cc \
-  src/gtest.cc
+  src/gtest-typed-test.cc
 
 EXTRA_DIST += $(GTEST_SRC)
 
@@ -44,58 +41,56 @@ EXTRA_DIST += \
 
 # C++ test files that we don't compile directly.
 EXTRA_DIST += \
-  test/gtest-death-test_ex_test.cc \
   test/gtest-death-test_test.cc \
+  test/gtest_environment_test.cc \
   test/gtest-filepath_test.cc \
   test/gtest-linked_ptr_test.cc \
-  test/gtest-listener_test.cc \
   test/gtest-message_test.cc \
+  test/gtest_no_test_unittest.cc \
   test/gtest-options_test.cc \
-  test/gtest-param-test2_test.cc \
-  test/gtest-param-test2_test.cc \
   test/gtest-param-test_test.cc \
-  test/gtest-param-test_test.cc \
+  test/gtest-param-test2_test.cc \
   test/gtest-param-test_test.h \
   test/gtest-port_test.cc \
-  test/gtest-printers_test.cc \
+  test/gtest_pred_impl_unittest.cc \
+  test/gtest_prod_test.cc \
+  test/production.cc \
+  test/production.h \
+  test/gtest_repeat_test.cc \
+  test/gtest_sole_header_test.cc \
+  test/gtest_stress_test.cc \
   test/gtest-test-part_test.cc \
-  test/gtest-tuple_test.cc \
-  test/gtest-typed-test2_test.cc \
+  test/gtest_throw_on_failure_ex_test.cc \
   test/gtest-typed-test_test.cc \
+  test/gtest-typed-test2_test.cc \
   test/gtest-typed-test_test.h \
+  test/gtest_unittest.cc \
   test/gtest-unittest-api_test.cc \
+  test/gtest-listener_test.cc \
+  test/gtest_main_unittest.cc \
+  test/gtest_unittest.cc \
+  test/gtest-tuple_test.cc \
+  test/gtest-param-test_test.cc \
+  test/gtest-param-test2_test.cc \
   test/gtest_break_on_failure_unittest_.cc \
-  test/gtest_catch_exceptions_test_.cc \
   test/gtest_color_test_.cc \
   test/gtest_env_var_test_.cc \
-  test/gtest_environment_test.cc \
   test/gtest_filter_unittest_.cc \
   test/gtest_help_test_.cc \
   test/gtest_list_tests_unittest_.cc \
-  test/gtest_main_unittest.cc \
-  test/gtest_no_test_unittest.cc \
   test/gtest_output_test_.cc \
-  test/gtest_pred_impl_unittest.cc \
-  test/gtest_prod_test.cc \
-  test/gtest_repeat_test.cc \
   test/gtest_shuffle_test_.cc \
-  test/gtest_sole_header_test.cc \
-  test/gtest_stress_test.cc \
-  test/gtest_throw_on_failure_ex_test.cc \
   test/gtest_throw_on_failure_test_.cc \
   test/gtest_uninitialized_test_.cc \
-  test/gtest_unittest.cc \
-  test/gtest_unittest.cc \
   test/gtest_xml_outfile1_test_.cc \
   test/gtest_xml_outfile2_test_.cc \
-  test/gtest_xml_output_unittest_.cc \
-  test/production.cc \
-  test/production.h
+  test/gtest_xml_output_unittest_.cc
 
 # Python tests that we don't run.
 EXTRA_DIST += \
+  test/gtest_test_utils.py \
+  test/gtest_xml_test_utils.py \
   test/gtest_break_on_failure_unittest.py \
-  test/gtest_catch_exceptions_test.py \
   test/gtest_color_test.py \
   test/gtest_env_var_test.py \
   test/gtest_filter_unittest.py \
@@ -103,24 +98,24 @@ EXTRA_DIST += \
   test/gtest_list_tests_unittest.py \
   test/gtest_output_test.py \
   test/gtest_output_test_golden_lin.txt \
+  test/gtest_output_test_golden_win.txt \
   test/gtest_shuffle_test.py \
-  test/gtest_test_utils.py \
   test/gtest_throw_on_failure_test.py \
   test/gtest_uninitialized_test.py \
   test/gtest_xml_outfiles_test.py \
   test/gtest_xml_output_unittest.py \
-  test/gtest_xml_test_utils.py
+  test/run_tests_util.py \
+  test/run_tests_util_test.py
 
 # CMake script
 EXTRA_DIST += \
-  CMakeLists.txt \
-  cmake/internal_utils.cmake
+  CMakeLists.txt
 
 # MSVC project files
 EXTRA_DIST += \
   msvc/gtest-md.sln \
-  msvc/gtest-md.vcproj \
   msvc/gtest.sln \
+  msvc/gtest-md.vcproj \
   msvc/gtest.vcproj \
   msvc/gtest_main-md.vcproj \
   msvc/gtest_main.vcproj \
@@ -138,27 +133,31 @@ EXTRA_DIST += \
   xcode/Config/StaticLibraryTarget.xcconfig \
   xcode/Config/TestTarget.xcconfig \
   xcode/Resources/Info.plist \
-  xcode/Scripts/runtests.sh \
   xcode/Scripts/versiongenerate.py \
+  xcode/Scripts/runtests.sh \
   xcode/gtest.xcodeproj/project.pbxproj
 
 # xcode sample files
 EXTRA_DIST += \
   xcode/Samples/FrameworkSample/Info.plist \
-  xcode/Samples/FrameworkSample/WidgetFramework.xcodeproj/project.pbxproj \
   xcode/Samples/FrameworkSample/runtests.sh \
+  xcode/Samples/FrameworkSample/widget_test.cc \
   xcode/Samples/FrameworkSample/widget.cc \
   xcode/Samples/FrameworkSample/widget.h \
-  xcode/Samples/FrameworkSample/widget_test.cc
+  xcode/Samples/FrameworkSample/WidgetFramework.xcodeproj/project.pbxproj
 
 # C++Builder project files
 EXTRA_DIST += \
-  codegear/gtest.cbproj \
-  codegear/gtest.groupproj \
   codegear/gtest_all.cc \
   codegear/gtest_link.cc \
+  codegear/gtest.cbproj \
   codegear/gtest_main.cbproj \
-  codegear/gtest_unittest.cbproj
+  codegear/gtest_unittest.cbproj \
+  codegear/gtest.groupproj
+
+# Scripts and utilities
+bin_SCRIPTS = scripts/gtest-config
+CLEANFILES = $(bin_SCRIPTS)
 
 # Distribute and install M4 macro
 m4datadir = $(datadir)/aclocal
@@ -182,17 +181,15 @@ lib_LTLIBRARIES = lib/libgtest.la lib/libgtest_main.la
 
 lib_libgtest_la_SOURCES = src/gtest-all.cc
 
-pkginclude_HEADERS = \
-  include/gtest/gtest-death-test.h \
-  include/gtest/gtest-message.h \
-  include/gtest/gtest-param-test.h \
-  include/gtest/gtest-printers.h \
-  include/gtest/gtest-spi.h \
-  include/gtest/gtest-test-part.h \
-  include/gtest/gtest-typed-test.h \
-  include/gtest/gtest.h \
-  include/gtest/gtest_pred_impl.h \
-  include/gtest/gtest_prod.h
+pkginclude_HEADERS = include/gtest/gtest.h \
+                     include/gtest/gtest-death-test.h \
+                     include/gtest/gtest-message.h \
+                     include/gtest/gtest-param-test.h \
+                     include/gtest/gtest_pred_impl.h \
+                     include/gtest/gtest_prod.h \
+                     include/gtest/gtest-spi.h \
+                     include/gtest/gtest-test-part.h \
+                     include/gtest/gtest-typed-test.h
 
 pkginclude_internaldir = $(pkgincludedir)/internal
 pkginclude_internal_HEADERS = \
@@ -219,14 +216,13 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 
 noinst_LTLIBRARIES = samples/libsamples.la
 
-samples_libsamples_la_SOURCES = \
-  samples/sample1.cc \
-  samples/sample1.h \
-  samples/sample2.cc \
-  samples/sample2.h \
-  samples/sample3-inl.h \
-  samples/sample4.cc \
-  samples/sample4.h
+samples_libsamples_la_SOURCES = samples/sample1.cc \
+                                samples/sample1.h \
+                                samples/sample2.cc \
+                                samples/sample2.h \
+                                samples/sample3-inl.h \
+                                samples/sample4.cc \
+                                samples/sample4.h
 
 TESTS=
 TESTS_ENVIRONMENT = GTEST_SOURCE_DIR="$(srcdir)/test" \
@@ -238,7 +234,6 @@ TESTS += samples/sample1_unittest
 check_PROGRAMS += samples/sample1_unittest
 samples_sample1_unittest_SOURCES = samples/sample1_unittest.cc
 samples_sample1_unittest_LDADD = lib/libgtest_main.la \
-                                 lib/libgtest.la \
                                  samples/libsamples.la
 
 # Another sample.  It also verifies that libgtest works.
@@ -248,18 +243,17 @@ samples_sample10_unittest_SOURCES = samples/sample10_unittest.cc
 samples_sample10_unittest_LDADD = lib/libgtest.la
 
 # This tests most constructs of gtest and verifies that libgtest_main
-# and libgtest work.
+# works.
 TESTS += test/gtest_all_test
 check_PROGRAMS += test/gtest_all_test
 test_gtest_all_test_SOURCES = test/gtest_all_test.cc
-test_gtest_all_test_LDADD = lib/libgtest_main.la \
-                            lib/libgtest.la
+test_gtest_all_test_LDADD = lib/libgtest_main.la
 
 # Tests that fused gtest files compile and work.
 FUSED_GTEST_SRC = \
   fused-src/gtest/gtest-all.cc \
-  fused-src/gtest/gtest.h \
-  fused-src/gtest/gtest_main.cc
+  fused-src/gtest/gtest_main.cc \
+  fused-src/gtest/gtest.h
 
 TESTS += test/fused_gtest_test
 check_PROGRAMS += test/fused_gtest_test
@@ -287,16 +281,4 @@ maintainer-clean-local:
 
 # Death tests may produce core dumps in the build directory. In case
 # this happens, clean them to keep distcleancheck happy.
-CLEANFILES = core
-
-# Disables 'make install' as installing a compiled version of Google
-# Test can lead to undefined behavior due to violation of the
-# One-Definition Rule.
-
-install-exec-local:
-	echo "'make install' is dangerous and not supported. Instead, see README for how to integrate Google Test into your build system."
-	false
-
-install-data-local:
-	echo "'make install' is dangerous and not supported. Instead, see README for how to integrate Google Test into your build system."
-	false
+CLEANFILES += core

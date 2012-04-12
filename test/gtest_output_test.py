@@ -32,7 +32,7 @@
 """Tests the text output of Google C++ Testing Framework.
 
 SYNOPSIS
-       gtest_output_test.py --build_dir=BUILD/DIR --gengolden
+       gtest_output_test.py --gtest_build_dir=BUILD/DIR --gengolden
          # where BUILD/DIR contains the built gtest_output_test_ file.
        gtest_output_test.py --gengolden
        gtest_output_test.py
@@ -52,8 +52,10 @@ CATCH_EXCEPTIONS_ENV_VAR_NAME = 'GTEST_CATCH_EXCEPTIONS'
 
 IS_WINDOWS = os.name == 'nt'
 
-# TODO(vladl@google.com): remove the _lin suffix.
-GOLDEN_NAME = 'gtest_output_test_golden_lin.txt'
+if IS_WINDOWS:
+  GOLDEN_NAME = 'gtest_output_test_golden_win.txt'
+else:
+  GOLDEN_NAME = 'gtest_output_test_golden_lin.txt'
 
 PROGRAM_PATH = gtest_test_utils.GetTestExecutablePath('gtest_output_test_')
 
@@ -134,20 +136,6 @@ def RemoveTypeInfoDetails(test_output):
 
   # some compilers output the name of type 'unsigned int' as 'unsigned'
   return re.sub(r'unsigned int', 'unsigned', test_output)
-
-
-def NormalizeToCurrentPlatform(test_output):
-  """Normalizes platform specific output details for easier comparison."""
-
-  if IS_WINDOWS:
-    # Removes the color information that is not present on Windows.
-    test_output = re.sub('\x1b\\[(0;3\d)?m', '', test_output)
-    # Changes failure message headers into the Windows format.
-    test_output = re.sub(r': Failure\n', r': error: ', test_output)
-    # Changes file(line_number) to file:line_number.
-    test_output = re.sub(r'((\w|\.)+)\((\d+)\):', r'\1:\3:', test_output)
-
-  return test_output
 
 
 def RemoveTestCounts(output):
@@ -296,10 +284,9 @@ class GTestOutputTest(gtest_test_utils.TestCase):
     if CAN_GENERATE_GOLDEN_FILE:
       self.assertEqual(normalized_golden, normalized_actual)
     else:
-      normalized_actual = NormalizeToCurrentPlatform(
-          RemoveTestCounts(normalized_actual))
-      normalized_golden = NormalizeToCurrentPlatform(
-          RemoveTestCounts(self.RemoveUnsupportedTests(normalized_golden)))
+      normalized_actual = RemoveTestCounts(normalized_actual)
+      normalized_golden = RemoveTestCounts(self.RemoveUnsupportedTests(
+          normalized_golden))
 
       # This code is very handy when debugging golden file differences:
       if os.getenv('DEBUG_GTEST_OUTPUT_TEST'):
@@ -325,9 +312,14 @@ if __name__ == '__main__':
     else:
       message = (
           """Unable to write a golden file when compiled in an environment
-that does not support all the required features (death tests, typed tests,
-and multiple threads).  Please generate the golden file using a binary built
-with those features enabled.""")
+that does not support all the required features (death tests""")
+      if IS_WINDOWS:
+        message += (
+            """\nand typed tests). Please check that you are using VC++ 8.0 SP1
+or higher as your compiler.""")
+      else:
+        message += """\ntyped tests, and threads).  Please generate the
+golden file using a binary built with those features enabled."""
 
       sys.stderr.write(message)
       sys.exit(1)

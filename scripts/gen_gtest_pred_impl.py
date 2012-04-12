@@ -238,19 +238,21 @@ AssertionResult AssertPred%(n)sHelper(const char* pred_text""" % DEFS
   impl += """) {
   if (pred(%(vs)s)) return AssertionSuccess();
 
+  Message msg;
 """ % DEFS
 
-  impl += '  return AssertionFailure() << pred_text << "("'
+  impl += '  msg << pred_text << "("'
 
   impl += Iter(n, """
-                            << e%s""", sep=' << ", "')
+      << e%s""", sep=' << ", "')
 
   impl += ' << ") evaluates to false, where"'
 
   impl += Iter(n, """
-                            << "\\n" << e%s << " evaluates to " << v%s""")
+      << "\\n" << e%s << " evaluates to " << v%s""")
 
   impl += """;
+  return AssertionFailure(msg);
 }
 
 // Internal macro for implementing {EXPECT|ASSERT}_PRED_FORMAT%(n)s.
@@ -384,8 +386,8 @@ def UnitTestPreamble():
 
 #include <iostream>
 
-#include "gtest/gtest.h"
-#include "gtest/gtest-spi.h"
+#include <gtest/gtest.h>
+#include <gtest/gtest-spi.h>
 
 // A user-defined data type.
 struct Bool {
@@ -476,14 +478,15 @@ testing::AssertionResult PredFormatFunction%(n)s(""" % DEFS
   if (PredFunction%(n)s(%(vs)s))
     return testing::AssertionSuccess();
 
-  return testing::AssertionFailure()
-      << """ % DEFS
+  testing::Message msg;
+  msg << """ % DEFS
 
   tests += Iter(n, 'e%s', sep=' << " + " << ')
 
   tests += """
       << " is expected to be positive, but evaluates to "
       << %(v_sum)s << ".";
+  return testing::AssertionFailure(msg);
 }
 """ % DEFS
 

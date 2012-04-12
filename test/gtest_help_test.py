@@ -32,7 +32,7 @@
 """Tests the --help flag of Google C++ Testing Framework.
 
 SYNOPSIS
-       gtest_help_test.py --build_dir=BUILD/DIR
+       gtest_help_test.py --gtest_build_dir=BUILD/DIR
          # where BUILD/DIR contains the built gtest_help_test_ file.
        gtest_help_test.py
 """
@@ -44,13 +44,12 @@ import re
 import gtest_test_utils
 
 
-IS_LINUX = os.name == 'posix' and os.uname()[0] == 'Linux'
 IS_WINDOWS = os.name == 'nt'
 
 PROGRAM_PATH = gtest_test_utils.GetTestExecutablePath('gtest_help_test_')
 FLAG_PREFIX = '--gtest_'
+CATCH_EXCEPTIONS_FLAG = FLAG_PREFIX + 'catch_exceptions'
 DEATH_TEST_STYLE_FLAG = FLAG_PREFIX + 'death_test_style'
-STREAM_RESULT_TO_FLAG = FLAG_PREFIX + 'stream_result_to'
 UNKNOWN_FLAG = FLAG_PREFIX + 'unknown_flag_for_testing'
 LIST_TESTS_FLAG = FLAG_PREFIX + 'list_tests'
 INCORRECT_FLAG_VARIANTS = [re.sub('^--', '-', LIST_TESTS_FLAG),
@@ -73,8 +72,7 @@ HELP_REGEX = re.compile(
     FLAG_PREFIX + r'print_time.*' +
     FLAG_PREFIX + r'output=.*' +
     FLAG_PREFIX + r'break_on_failure.*' +
-    FLAG_PREFIX + r'throw_on_failure.*' +
-    FLAG_PREFIX + r'catch_exceptions=0.*',
+    FLAG_PREFIX + r'throw_on_failure.*',
     re.DOTALL)
 
 
@@ -111,11 +109,10 @@ class GTestHelpTest(gtest_test_utils.TestCase):
     exit_code, output = RunWithFlag(flag)
     self.assertEquals(0, exit_code)
     self.assert_(HELP_REGEX.search(output), output)
-
-    if IS_LINUX:
-      self.assert_(STREAM_RESULT_TO_FLAG in output, output)
+    if IS_WINDOWS:
+      self.assert_(CATCH_EXCEPTIONS_FLAG in output, output)
     else:
-      self.assert_(STREAM_RESULT_TO_FLAG not in output, output)
+      self.assert_(CATCH_EXCEPTIONS_FLAG not in output, output)
 
     if SUPPORTS_DEATH_TESTS and not IS_WINDOWS:
       self.assert_(DEATH_TEST_STYLE_FLAG in output, output)

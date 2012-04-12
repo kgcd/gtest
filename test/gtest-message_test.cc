@@ -31,13 +31,14 @@
 //
 // Tests for the Message class.
 
-#include "gtest/gtest-message.h"
+#include <gtest/gtest-message.h>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 namespace {
 
 using ::testing::Message;
+using ::testing::internal::StrStream;
 
 // A helper function that turns a Message into a C string.
 const char* ToCString(const Message& msg) {
@@ -153,9 +154,9 @@ TEST(MessageTest, GetString) {
 // Tests streaming a Message object to an ostream.
 TEST(MessageTest, StreamsToOStream) {
   Message msg("Hello");
-  ::std::stringstream ss;
+  StrStream ss;
   ss << msg;
-  EXPECT_STREQ("Hello", testing::internal::StringStreamToString(&ss).c_str());
+  EXPECT_STREQ("Hello", testing::internal::StrStreamToString(&ss).c_str());
 }
 
 // Tests that a Message object doesn't take up too much stack space.

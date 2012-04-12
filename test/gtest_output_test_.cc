@@ -32,8 +32,8 @@
 //
 // Author: wan@google.com (Zhanyong Wan)
 
-#include "gtest/gtest-spi.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest-spi.h>
+#include <gtest/gtest.h>
 
 // Indicates that this translation unit is part of Google Test's
 // implementation.  It must come before gtest-internal-inl.h is
@@ -86,20 +86,6 @@ TEST(PassingTest, PassingTest1) {
 
 TEST(PassingTest, PassingTest2) {
 }
-
-// Tests that parameters of failing parameterized tests are printed in the
-// failing test summary.
-class FailingParamTest : public testing::TestWithParam<int> {};
-
-TEST_P(FailingParamTest, Fails) {
-  EXPECT_EQ(1, GetParam());
-}
-
-// This generates a test which will fail. Google Test is expected to print
-// its parameter when it outputs the list of all failed tests.
-INSTANTIATE_TEST_CASE_P(PrintingFailingParams,
-                        FailingParamTest,
-                        testing::Values(2));
 
 // Tests catching a fatal failure in a subroutine.
 TEST(FatalFailureTest, FatalFailureInSubroutine) {
@@ -441,9 +427,136 @@ TEST_F(FatalFailureInSetUpTest, FailureInSetUp) {
          << "We should never get here, as SetUp() failed.";
 }
 
-TEST(AddFailureAtTest, MessageContainsSpecifiedFileAndLineNumber) {
-  ADD_FAILURE_AT("foo.cc", 42) << "Expected failure in foo.cc";
+#if GTEST_OS_WINDOWS
+
+// This group of tests verifies that Google Test handles SEH and C++
+// exceptions correctly.
+
+// A function that throws an SEH exception.
+static void ThrowSEH() {
+  int* p = NULL;
+  *p = 0;  // Raises an access violation.
 }
+
+// Tests exceptions thrown in the test fixture constructor.
+class ExceptionInFixtureCtorTest : public testing::Test {
+ protected:
+  ExceptionInFixtureCtorTest() {
+    printf("(expecting a failure on thrown exception "
+           "in the test fixture's constructor)\n");
+
+    ThrowSEH();
+  }
+
+  virtual ~ExceptionInFixtureCtorTest() {
+    Deinit();
+  }
+
+  virtual void SetUp() {
+    FAIL() << "UNEXPECTED failure in SetUp().  "
+           << "We should never get here, as the test fixture c'tor threw.";
+  }
+
+  virtual void TearDown() {
+    FAIL() << "UNEXPECTED failure in TearDown().  "
+           << "We should never get here, as the test fixture c'tor threw.";
+  }
+ private:
+  void Deinit() {
+    FAIL() << "UNEXPECTED failure in the d'tor.  "
+           << "We should never get here, as the test fixture c'tor threw.";
+  }
+};
+
+TEST_F(ExceptionInFixtureCtorTest, ExceptionInFixtureCtor) {
+  FAIL() << "UNEXPECTED failure in the test function.  "
+         << "We should never get here, as the test fixture c'tor threw.";
+}
+
+// Tests exceptions thrown in SetUp().
+class ExceptionInSetUpTest : public testing::Test {
+ protected:
+  virtual ~ExceptionInSetUpTest() {
+    Deinit();
+  }
+
+  virtual void SetUp() {
+    printf("(expecting 3 failures)\n");
+
+    ThrowSEH();
+  }
+
+  virtual void TearDown() {
+    FAIL() << "Expected failure #2, in TearDown().";
+  }
+ private:
+  void Deinit() {
+    FAIL() << "Expected failure #3, in the test fixture d'tor.";
+  }
+};
+
+TEST_F(ExceptionInSetUpTest, ExceptionInSetUp) {
+  FAIL() << "UNEXPECTED failure in the test function.  "
+         << "We should never get here, as SetUp() threw.";
+}
+
+// Tests that TearDown() and the test fixture d'tor are always called,
+// even when the test function throws an exception.
+class ExceptionInTestFunctionTest : public testing::Test {
+ protected:
+  virtual ~ExceptionInTestFunctionTest() {
+    Deinit();
+  }
+
+  virtual void TearDown() {
+    FAIL() << "Expected failure #2, in TearDown().";
+  }
+ private:
+  void Deinit() {
+    FAIL() << "Expected failure #3, in the test fixture d'tor.";
+  }
+};
+
+// Tests that the test fixture d'tor is always called, even when the
+// test function throws an SEH exception.
+TEST_F(ExceptionInTestFunctionTest, SEH) {
+  printf("(expecting 3 failures)\n");
+
+  ThrowSEH();
+}
+
+#if GTEST_HAS_EXCEPTIONS
+
+// Tests that the test fixture d'tor is always called, even when the
+// test function throws a C++ exception.  We do this only when
+// GTEST_HAS_EXCEPTIONS is non-zero, i.e. C++ exceptions are enabled.
+TEST_F(ExceptionInTestFunctionTest, CppException) {
+  throw 1;
+}
+
+// Tests exceptions thrown in TearDown().
+class ExceptionInTearDownTest : public testing::Test {
+ protected:
+  virtual ~ExceptionInTearDownTest() {
+    Deinit();
+  }
+
+  virtual void TearDown() {
+    throw 1;
+  }
+ private:
+  void Deinit() {
+    FAIL() << "Expected failure #2, in the test fixture d'tor.";
+  }
+};
+
+TEST_F(ExceptionInTearDownTest, ExceptionInTearDown) {
+  printf("(expecting 2 failures)\n");
+}
+
+#endif  // GTEST_HAS_EXCEPTIONS
+
+#endif  // GTEST_OS_WINDOWS
 
 #if GTEST_IS_THREADSAFE
 
@@ -788,7 +901,7 @@ INSTANTIATE_TYPED_TEST_CASE_P(Unsigned, TypedTestP, UnsignedTypes);
 TEST(ADeathTest, ShouldRunFirst) {
 }
 
-# if GTEST_HAS_TYPED_TEST
+#if GTEST_HAS_TYPED_TEST
 
 // We rely on the golden file to verify that typed tests whose test
 // case name ends with DeathTest are run first.
@@ -803,9 +916,9 @@ TYPED_TEST_CASE(ATypedDeathTest, NumericTypes);
 TYPED_TEST(ATypedDeathTest, ShouldRunFirst) {
 }
 
-# endif  // GTEST_HAS_TYPED_TEST
+#endif  // GTEST_HAS_TYPED_TEST
 
-# if GTEST_HAS_TYPED_TEST_P
+#if GTEST_HAS_TYPED_TEST_P
 
 
 // We rely on the golden file to verify that type-parameterized tests
@@ -824,7 +937,7 @@ REGISTER_TYPED_TEST_CASE_P(ATypeParamDeathTest, ShouldRunFirst);
 
 INSTANTIATE_TYPED_TEST_CASE_P(My, ATypeParamDeathTest, NumericTypes);
 
-# endif  // GTEST_HAS_TYPED_TEST_P
+#endif  // GTEST_HAS_TYPED_TEST_P
 
 #endif  // GTEST_HAS_DEATH_TEST
 
@@ -972,7 +1085,9 @@ class BarEnvironment : public testing::Environment {
   }
 };
 
-bool GTEST_FLAG(internal_skip_environment_and_ad_hoc_tests) = false;
+GTEST_DEFINE_bool_(internal_skip_environment_and_ad_hoc_tests, false,
+                   "This flag causes the program to skip test environment "
+                   "tests and ad hoc tests.");
 
 // The main function.
 //
@@ -998,11 +1113,11 @@ int main(int argc, char **argv) {
   if (testing::internal::GTEST_FLAG(internal_run_death_test) != "") {
     // Skip the usual output capturing if we're running as the child
     // process of an threadsafe-style death test.
-# if GTEST_OS_WINDOWS
+#if GTEST_OS_WINDOWS
     posix::FReopen("nul:", "w", stdout);
-# else
+#else
     posix::FReopen("/dev/null", "w", stdout);
-# endif  // GTEST_OS_WINDOWS
+#endif  // GTEST_OS_WINDOWS
     return RUN_ALL_TESTS();
   }
 #endif  // GTEST_HAS_DEATH_TEST

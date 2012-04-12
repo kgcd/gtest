@@ -31,20 +31,18 @@
 //
 // This file tests the internal cross-platform support utilities.
 
-#include "gtest/internal/gtest-port.h"
+#include <gtest/internal/gtest-port.h>
 
 #include <stdio.h>
 
 #if GTEST_OS_MAC
-# include <time.h>
+#include <time.h>
 #endif  // GTEST_OS_MAC
 
-#include <list>
 #include <utility>  // For std::pair and std::make_pair.
-#include <vector>
 
-#include "gtest/gtest.h"
-#include "gtest/gtest-spi.h"
+#include <gtest/gtest.h>
+#include <gtest/gtest-spi.h>
 
 // Indicates that this translation unit is part of Google Test's
 // implementation.  It must come before gtest-internal-inl.h is
@@ -60,137 +58,6 @@ using std::pair;
 
 namespace testing {
 namespace internal {
-
-class Base {
- public:
-  // Copy constructor and assignment operator do exactly what we need, so we
-  // use them.
-  Base() : member_(0) {}
-  explicit Base(int n) : member_(n) {}
-  virtual ~Base() {}
-  int member() { return member_; }
-
- private:
-  int member_;
-};
-
-class Derived : public Base {
- public:
-  explicit Derived(int n) : Base(n) {}
-};
-
-TEST(ImplicitCastTest, ConvertsPointers) {
-  Derived derived(0);
-  EXPECT_TRUE(&derived == ::testing::internal::ImplicitCast_<Base*>(&derived));
-}
-
-TEST(ImplicitCastTest, CanUseInheritance) {
-  Derived derived(1);
-  Base base = ::testing::internal::ImplicitCast_<Base>(derived);
-  EXPECT_EQ(derived.member(), base.member());
-}
-
-class Castable {
- public:
-  Castable(bool* converted) : converted_(converted) {}
-  operator Base() {
-    *converted_ = true;
-    return Base();
-  }
-
- private:
-  bool* converted_;
-};
-
-TEST(ImplicitCastTest, CanUseNonConstCastOperator) {
-  bool converted = false;
-  Castable castable(&converted);
-  Base base = ::testing::internal::ImplicitCast_<Base>(castable);
-  EXPECT_TRUE(converted);
-}
-
-class ConstCastable {
- public:
-  ConstCastable(bool* converted) : converted_(converted) {}
-  operator Base() const {
-    *converted_ = true;
-    return Base();
-  }
-
- private:
-  bool* converted_;
-};
-
-TEST(ImplicitCastTest, CanUseConstCastOperatorOnConstValues) {
-  bool converted = false;
-  const ConstCastable const_castable(&converted);
-  Base base = ::testing::internal::ImplicitCast_<Base>(const_castable);
-  EXPECT_TRUE(converted);
-}
-
-class ConstAndNonConstCastable {
- public:
-  ConstAndNonConstCastable(bool* converted, bool* const_converted)
-      : converted_(converted), const_converted_(const_converted) {}
-  operator Base() {
-    *converted_ = true;
-    return Base();
-  }
-  operator Base() const {
-    *const_converted_ = true;
-    return Base();
-  }
-
- private:
-  bool* converted_;
-  bool* const_converted_;
-};
-
-TEST(ImplicitCastTest, CanSelectBetweenConstAndNonConstCasrAppropriately) {
-  bool converted = false;
-  bool const_converted = false;
-  ConstAndNonConstCastable castable(&converted, &const_converted);
-  Base base = ::testing::internal::ImplicitCast_<Base>(castable);
-  EXPECT_TRUE(converted);
-  EXPECT_FALSE(const_converted);
-
-  converted = false;
-  const_converted = false;
-  const ConstAndNonConstCastable const_castable(&converted, &const_converted);
-  base = ::testing::internal::ImplicitCast_<Base>(const_castable);
-  EXPECT_FALSE(converted);
-  EXPECT_TRUE(const_converted);
-}
-
-class To {
- public:
-  To(bool* converted) { *converted = true; }  // NOLINT
-};
-
-TEST(ImplicitCastTest, CanUseImplicitConstructor) {
-  bool converted = false;
-  To to = ::testing::internal::ImplicitCast_<To>(&converted);
-  (void)to;
-  EXPECT_TRUE(converted);
-}
-
-TEST(IteratorTraitsTest, WorksForSTLContainerIterators) {
-  StaticAssertTypeEq<int,
-      IteratorTraits< ::std::vector<int>::const_iterator>::value_type>();
-  StaticAssertTypeEq<bool,
-      IteratorTraits< ::std::list<bool>::iterator>::value_type>();
-}
-
-TEST(IteratorTraitsTest, WorksForPointerToNonConst) {
-  StaticAssertTypeEq<char, IteratorTraits<char*>::value_type>();
-  StaticAssertTypeEq<const void*, IteratorTraits<const void**>::value_type>();
-}
-
-TEST(IteratorTraitsTest, WorksForPointerToConst) {
-  StaticAssertTypeEq<char, IteratorTraits<const char*>::value_type>();
-  StaticAssertTypeEq<const void*,
-      IteratorTraits<const void* const*>::value_type>();
-}
 
 // Tests that the element_type typedef is available in scoped_ptr and refers
 // to the parameter type.
@@ -227,44 +94,6 @@ TEST(GtestCheckSyntaxTest, WorksWithSwitch) {
   switch(0)
     case 0:
       GTEST_CHECK_(true) << "Check failed in switch case";
-}
-
-// Verifies behavior of FormatFileLocation.
-TEST(FormatFileLocationTest, FormatsFileLocation) {
-  EXPECT_PRED_FORMAT2(IsSubstring, "foo.cc", FormatFileLocation("foo.cc", 42));
-  EXPECT_PRED_FORMAT2(IsSubstring, "42", FormatFileLocation("foo.cc", 42));
-}
-
-TEST(FormatFileLocationTest, FormatsUnknownFile) {
-  EXPECT_PRED_FORMAT2(
-      IsSubstring, "unknown file", FormatFileLocation(NULL, 42));
-  EXPECT_PRED_FORMAT2(IsSubstring, "42", FormatFileLocation(NULL, 42));
-}
-
-TEST(FormatFileLocationTest, FormatsUknownLine) {
-  EXPECT_EQ("foo.cc:", FormatFileLocation("foo.cc", -1));
-}
-
-TEST(FormatFileLocationTest, FormatsUknownFileAndLine) {
-  EXPECT_EQ("unknown file:", FormatFileLocation(NULL, -1));
-}
-
-// Verifies behavior of FormatCompilerIndependentFileLocation.
-TEST(FormatCompilerIndependentFileLocationTest, FormatsFileLocation) {
-  EXPECT_EQ("foo.cc:42", FormatCompilerIndependentFileLocation("foo.cc", 42));
-}
-
-TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownFile) {
-  EXPECT_EQ("unknown file:42",
-            FormatCompilerIndependentFileLocation(NULL, 42));
-}
-
-TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownLine) {
-  EXPECT_EQ("foo.cc", FormatCompilerIndependentFileLocation("foo.cc", -1));
-}
-
-TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownFileAndLine) {
-  EXPECT_EQ("unknown file", FormatCompilerIndependentFileLocation(NULL, -1));
 }
 
 #if GTEST_OS_MAC
@@ -320,10 +149,8 @@ TEST(GtestCheckDeathTest, DiesWithCorrectOutputOnFailure) {
   const char regex[] =
 #ifdef _MSC_VER
      "gtest-port_test\\.cc\\(\\d+\\):"
-#elif GTEST_USES_POSIX_RE
-     "gtest-port_test\\.cc:[0-9]+"
 #else
-     "gtest-port_test\\.cc:\\d+"
+     "gtest-port_test\\.cc:[0-9]+"
 #endif  // _MSC_VER
      ".*a_false_condition.*Extra info.*";
 
@@ -343,24 +170,9 @@ TEST(GtestCheckDeathTest, LivesSilentlyOnSuccess) {
 
 #endif  // GTEST_HAS_DEATH_TEST
 
-// Verifies that Google Test choose regular expression engine appropriate to
-// the platform. The test will produce compiler errors in case of failure.
-// For simplicity, we only cover the most important platforms here.
-TEST(RegexEngineSelectionTest, SelectsCorrectRegexEngine) {
-#if GTEST_HAS_POSIX_RE
-
-  EXPECT_TRUE(GTEST_USES_POSIX_RE);
-
-#else
-
-  EXPECT_TRUE(GTEST_USES_SIMPLE_RE);
-
-#endif
-}
-
 #if GTEST_USES_POSIX_RE
 
-# if GTEST_HAS_TYPED_TEST
+#if GTEST_HAS_TYPED_TEST
 
 template <typename Str>
 class RETest : public ::testing::Test {};
@@ -369,9 +181,9 @@ class RETest : public ::testing::Test {};
 // supports.
 typedef testing::Types<
     ::std::string,
-#  if GTEST_HAS_GLOBAL_STRING
+#if GTEST_HAS_GLOBAL_STRING
     ::string,
-#  endif  // GTEST_HAS_GLOBAL_STRING
+#endif  // GTEST_HAS_GLOBAL_STRING
     const char*> StringTypes;
 
 TYPED_TEST_CASE(RETest, StringTypes);
@@ -422,7 +234,7 @@ TYPED_TEST(RETest, PartialMatchWorks) {
   EXPECT_FALSE(RE::PartialMatch(TypeParam("zza"), re));
 }
 
-# endif  // GTEST_HAS_TYPED_TEST
+#endif  // GTEST_HAS_TYPED_TEST
 
 #elif GTEST_USES_SIMPLE_RE
 
@@ -440,33 +252,33 @@ TEST(IsInSetTest, WorksForNonNulChars) {
   EXPECT_TRUE(IsInSet('b', "ab"));
 }
 
-TEST(IsAsciiDigitTest, IsFalseForNonDigit) {
-  EXPECT_FALSE(IsAsciiDigit('\0'));
-  EXPECT_FALSE(IsAsciiDigit(' '));
-  EXPECT_FALSE(IsAsciiDigit('+'));
-  EXPECT_FALSE(IsAsciiDigit('-'));
-  EXPECT_FALSE(IsAsciiDigit('.'));
-  EXPECT_FALSE(IsAsciiDigit('a'));
+TEST(IsDigitTest, IsFalseForNonDigit) {
+  EXPECT_FALSE(IsDigit('\0'));
+  EXPECT_FALSE(IsDigit(' '));
+  EXPECT_FALSE(IsDigit('+'));
+  EXPECT_FALSE(IsDigit('-'));
+  EXPECT_FALSE(IsDigit('.'));
+  EXPECT_FALSE(IsDigit('a'));
 }
 
-TEST(IsAsciiDigitTest, IsTrueForDigit) {
-  EXPECT_TRUE(IsAsciiDigit('0'));
-  EXPECT_TRUE(IsAsciiDigit('1'));
-  EXPECT_TRUE(IsAsciiDigit('5'));
-  EXPECT_TRUE(IsAsciiDigit('9'));
+TEST(IsDigitTest, IsTrueForDigit) {
+  EXPECT_TRUE(IsDigit('0'));
+  EXPECT_TRUE(IsDigit('1'));
+  EXPECT_TRUE(IsDigit('5'));
+  EXPECT_TRUE(IsDigit('9'));
 }
 
-TEST(IsAsciiPunctTest, IsFalseForNonPunct) {
-  EXPECT_FALSE(IsAsciiPunct('\0'));
-  EXPECT_FALSE(IsAsciiPunct(' '));
-  EXPECT_FALSE(IsAsciiPunct('\n'));
-  EXPECT_FALSE(IsAsciiPunct('a'));
-  EXPECT_FALSE(IsAsciiPunct('0'));
+TEST(IsPunctTest, IsFalseForNonPunct) {
+  EXPECT_FALSE(IsPunct('\0'));
+  EXPECT_FALSE(IsPunct(' '));
+  EXPECT_FALSE(IsPunct('\n'));
+  EXPECT_FALSE(IsPunct('a'));
+  EXPECT_FALSE(IsPunct('0'));
 }
 
-TEST(IsAsciiPunctTest, IsTrueForPunct) {
+TEST(IsPunctTest, IsTrueForPunct) {
   for (const char* p = "^-!\"#$%&'()*+,./:;<=>?@[\\]_`{|}~"; *p; p++) {
-    EXPECT_PRED1(IsAsciiPunct, *p);
+    EXPECT_PRED1(IsPunct, *p);
   }
 }
 
@@ -484,47 +296,47 @@ TEST(IsRepeatTest, IsTrueForRepeatChar) {
   EXPECT_TRUE(IsRepeat('+'));
 }
 
-TEST(IsAsciiWhiteSpaceTest, IsFalseForNonWhiteSpace) {
-  EXPECT_FALSE(IsAsciiWhiteSpace('\0'));
-  EXPECT_FALSE(IsAsciiWhiteSpace('a'));
-  EXPECT_FALSE(IsAsciiWhiteSpace('1'));
-  EXPECT_FALSE(IsAsciiWhiteSpace('+'));
-  EXPECT_FALSE(IsAsciiWhiteSpace('_'));
+TEST(IsWhiteSpaceTest, IsFalseForNonWhiteSpace) {
+  EXPECT_FALSE(IsWhiteSpace('\0'));
+  EXPECT_FALSE(IsWhiteSpace('a'));
+  EXPECT_FALSE(IsWhiteSpace('1'));
+  EXPECT_FALSE(IsWhiteSpace('+'));
+  EXPECT_FALSE(IsWhiteSpace('_'));
 }
 
-TEST(IsAsciiWhiteSpaceTest, IsTrueForWhiteSpace) {
-  EXPECT_TRUE(IsAsciiWhiteSpace(' '));
-  EXPECT_TRUE(IsAsciiWhiteSpace('\n'));
-  EXPECT_TRUE(IsAsciiWhiteSpace('\r'));
-  EXPECT_TRUE(IsAsciiWhiteSpace('\t'));
-  EXPECT_TRUE(IsAsciiWhiteSpace('\v'));
-  EXPECT_TRUE(IsAsciiWhiteSpace('\f'));
+TEST(IsWhiteSpaceTest, IsTrueForWhiteSpace) {
+  EXPECT_TRUE(IsWhiteSpace(' '));
+  EXPECT_TRUE(IsWhiteSpace('\n'));
+  EXPECT_TRUE(IsWhiteSpace('\r'));
+  EXPECT_TRUE(IsWhiteSpace('\t'));
+  EXPECT_TRUE(IsWhiteSpace('\v'));
+  EXPECT_TRUE(IsWhiteSpace('\f'));
 }
 
-TEST(IsAsciiWordCharTest, IsFalseForNonWordChar) {
-  EXPECT_FALSE(IsAsciiWordChar('\0'));
-  EXPECT_FALSE(IsAsciiWordChar('+'));
-  EXPECT_FALSE(IsAsciiWordChar('.'));
-  EXPECT_FALSE(IsAsciiWordChar(' '));
-  EXPECT_FALSE(IsAsciiWordChar('\n'));
+TEST(IsWordCharTest, IsFalseForNonWordChar) {
+  EXPECT_FALSE(IsWordChar('\0'));
+  EXPECT_FALSE(IsWordChar('+'));
+  EXPECT_FALSE(IsWordChar('.'));
+  EXPECT_FALSE(IsWordChar(' '));
+  EXPECT_FALSE(IsWordChar('\n'));
 }
 
-TEST(IsAsciiWordCharTest, IsTrueForLetter) {
-  EXPECT_TRUE(IsAsciiWordChar('a'));
-  EXPECT_TRUE(IsAsciiWordChar('b'));
-  EXPECT_TRUE(IsAsciiWordChar('A'));
-  EXPECT_TRUE(IsAsciiWordChar('Z'));
+TEST(IsWordCharTest, IsTrueForLetter) {
+  EXPECT_TRUE(IsWordChar('a'));
+  EXPECT_TRUE(IsWordChar('b'));
+  EXPECT_TRUE(IsWordChar('A'));
+  EXPECT_TRUE(IsWordChar('Z'));
 }
 
-TEST(IsAsciiWordCharTest, IsTrueForDigit) {
-  EXPECT_TRUE(IsAsciiWordChar('0'));
-  EXPECT_TRUE(IsAsciiWordChar('1'));
-  EXPECT_TRUE(IsAsciiWordChar('7'));
-  EXPECT_TRUE(IsAsciiWordChar('9'));
+TEST(IsWordCharTest, IsTrueForDigit) {
+  EXPECT_TRUE(IsWordChar('0'));
+  EXPECT_TRUE(IsWordChar('1'));
+  EXPECT_TRUE(IsWordChar('7'));
+  EXPECT_TRUE(IsWordChar('9'));
 }
 
-TEST(IsAsciiWordCharTest, IsTrueForUnderscore) {
-  EXPECT_TRUE(IsAsciiWordChar('_'));
+TEST(IsWordCharTest, IsTrueForUnderscore) {
+  EXPECT_TRUE(IsWordChar('_'));
 }
 
 TEST(IsValidEscapeTest, IsFalseForNonPrintable) {

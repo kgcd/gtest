@@ -29,32 +29,30 @@
 //
 // Author: wan@google.com (Zhanyong Wan)
 
-#include "gtest/internal/gtest-port.h"
+#include <gtest/internal/gtest-port.h>
 
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #if GTEST_OS_WINDOWS_MOBILE
-# include <windows.h>  // For TerminateProcess()
+#include <windows.h>  // For TerminateProcess()
 #elif GTEST_OS_WINDOWS
-# include <io.h>
-# include <sys/stat.h>
+#include <io.h>
+#include <sys/stat.h>
 #else
-# include <unistd.h>
+#include <unistd.h>
 #endif  // GTEST_OS_WINDOWS_MOBILE
 
 #if GTEST_OS_MAC
-# include <mach/mach_init.h>
-# include <mach/task.h>
-# include <mach/vm_map.h>
+#include <mach/mach_init.h>
+#include <mach/task.h>
+#include <mach/vm_map.h>
 #endif  // GTEST_OS_MAC
 
-#include "gtest/gtest-spi.h"
-#include "gtest/gtest-message.h"
-#include "gtest/internal/gtest-internal.h"
-#include "gtest/internal/gtest-string.h"
+#include <gtest/gtest-spi.h>
+#include <gtest/gtest-message.h>
+#include <gtest/internal/gtest-string.h>
 
 // Indicates that this translation unit is part of Google Test's
 // implementation.  It must come before gtest-internal-inl.h is
@@ -182,20 +180,20 @@ bool IsInSet(char ch, const char* str) {
 // Returns true iff ch belongs to the given classification.  Unlike
 // similar functions in <ctype.h>, these aren't affected by the
 // current locale.
-bool IsAsciiDigit(char ch) { return '0' <= ch && ch <= '9'; }
-bool IsAsciiPunct(char ch) {
+bool IsDigit(char ch) { return '0' <= ch && ch <= '9'; }
+bool IsPunct(char ch) {
   return IsInSet(ch, "^-!\"#$%&'()*+,./:;<=>?@[\\]_`{|}~");
 }
 bool IsRepeat(char ch) { return IsInSet(ch, "?*+"); }
-bool IsAsciiWhiteSpace(char ch) { return IsInSet(ch, " \f\n\r\t\v"); }
-bool IsAsciiWordChar(char ch) {
+bool IsWhiteSpace(char ch) { return IsInSet(ch, " \f\n\r\t\v"); }
+bool IsWordChar(char ch) {
   return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') ||
       ('0' <= ch && ch <= '9') || ch == '_';
 }
 
 // Returns true iff "\\c" is a supported escape sequence.
 bool IsValidEscape(char c) {
-  return (IsAsciiPunct(c) || IsInSet(c, "dDfnrsStvwW"));
+  return (IsPunct(c) || IsInSet(c, "dDfnrsStvwW"));
 }
 
 // Returns true iff the given atom (specified by escaped and pattern)
@@ -203,19 +201,19 @@ bool IsValidEscape(char c) {
 bool AtomMatchesChar(bool escaped, char pattern_char, char ch) {
   if (escaped) {  // "\\p" where p is pattern_char.
     switch (pattern_char) {
-      case 'd': return IsAsciiDigit(ch);
-      case 'D': return !IsAsciiDigit(ch);
+      case 'd': return IsDigit(ch);
+      case 'D': return !IsDigit(ch);
       case 'f': return ch == '\f';
       case 'n': return ch == '\n';
       case 'r': return ch == '\r';
-      case 's': return IsAsciiWhiteSpace(ch);
-      case 'S': return !IsAsciiWhiteSpace(ch);
+      case 's': return IsWhiteSpace(ch);
+      case 'S': return !IsWhiteSpace(ch);
       case 't': return ch == '\t';
       case 'v': return ch == '\v';
-      case 'w': return IsAsciiWordChar(ch);
-      case 'W': return !IsAsciiWordChar(ch);
+      case 'w': return IsWordChar(ch);
+      case 'W': return !IsWordChar(ch);
     }
-    return IsAsciiPunct(pattern_char) && pattern_char == ch;
+    return IsPunct(pattern_char) && pattern_char == ch;
   }
 
   return (pattern_char == '.' && ch != '\n') || pattern_char == ch;
@@ -424,38 +422,6 @@ void RE::Init(const char* regex) {
 
 #endif  // GTEST_USES_POSIX_RE
 
-const char kUnknownFile[] = "unknown file";
-
-// Formats a source file path and a line number as they would appear
-// in an error message from the compiler used to compile this code.
-GTEST_API_ ::std::string FormatFileLocation(const char* file, int line) {
-  const char* const file_name = file == NULL ? kUnknownFile : file;
-
-  if (line < 0) {
-    return String::Format("%s:", file_name).c_str();
-  }
-#ifdef _MSC_VER
-  return String::Format("%s(%d):", file_name, line).c_str();
-#else
-  return String::Format("%s:%d:", file_name, line).c_str();
-#endif  // _MSC_VER
-}
-
-// Formats a file location for compiler-independent XML output.
-// Although this function is not platform dependent, we put it next to
-// FormatFileLocation in order to contrast the two functions.
-// Note that FormatCompilerIndependentFileLocation() does NOT append colon
-// to the file location it produces, unlike FormatFileLocation().
-GTEST_API_ ::std::string FormatCompilerIndependentFileLocation(
-    const char* file, int line) {
-  const char* const file_name = file == NULL ? kUnknownFile : file;
-
-  if (line < 0)
-    return file_name;
-  else
-    return String::Format("%s:%d", file_name, line).c_str();
-}
-
 
 GTestLog::GTestLog(GTestLogSeverity severity, const char* file, int line)
     : severity_(severity) {
@@ -478,19 +444,18 @@ GTestLog::~GTestLog() {
 // Disable Microsoft deprecation warnings for POSIX functions called from
 // this class (creat, dup, dup2, and close)
 #ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable: 4996)
+#pragma warning(push)
+#pragma warning(disable: 4996)
 #endif  // _MSC_VER
 
-#if GTEST_HAS_STREAM_REDIRECTION
+#if GTEST_HAS_STREAM_REDIRECTION_
 
 // Object that captures an output stream (stdout/stderr).
 class CapturedStream {
  public:
   // The ctor redirects the stream to a temporary file.
   CapturedStream(int fd) : fd_(fd), uncaptured_fd_(dup(fd)) {
-
-# if GTEST_OS_WINDOWS
+#if GTEST_OS_WINDOWS
     char temp_dir_path[MAX_PATH + 1] = { '\0' };  // NOLINT
     char temp_file_path[MAX_PATH + 1] = { '\0' };  // NOLINT
 
@@ -505,14 +470,14 @@ class CapturedStream {
     GTEST_CHECK_(captured_fd != -1) << "Unable to open temporary file "
                                     << temp_file_path;
     filename_ = temp_file_path;
-# else
+#else
     // There's no guarantee that a test has write access to the
     // current directory, so we create the temporary file in the /tmp
     // directory instead.
     char name_template[] = "/tmp/captured_stream.XXXXXX";
     const int captured_fd = mkstemp(name_template);
     filename_ = name_template;
-# endif  // GTEST_OS_WINDOWS
+#endif  // GTEST_OS_WINDOWS
     fflush(NULL);
     dup2(captured_fd, fd_);
     close(captured_fd);
@@ -581,9 +546,9 @@ String CapturedStream::ReadEntireFile(FILE* file) {
   return content;
 }
 
-# ifdef _MSC_VER
-#  pragma warning(pop)
-# endif  // _MSC_VER
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 static CapturedStream* g_captured_stderr = NULL;
 static CapturedStream* g_captured_stdout = NULL;
@@ -623,7 +588,7 @@ String GetCapturedStdout() { return GetCapturedStream(&g_captured_stdout); }
 // Stops capturing stderr and returns the captured string.
 String GetCapturedStderr() { return GetCapturedStream(&g_captured_stderr); }
 
-#endif  // GTEST_HAS_STREAM_REDIRECTION
+#endif  // GTEST_HAS_STREAM_REDIRECTION_
 
 #if GTEST_HAS_DEATH_TEST
 
@@ -653,7 +618,7 @@ static String FlagToEnvVar(const char* flag) {
 
   Message env_var;
   for (size_t i = 0; i != full_flag.length(); i++) {
-    env_var << ToUpper(full_flag.c_str()[i]);
+    env_var << static_cast<char>(toupper(full_flag.c_str()[i]));
   }
 
   return env_var.GetString();
